@@ -1,4 +1,3 @@
-// src/App.js
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import ProductList from './components/ProductList';
@@ -10,8 +9,8 @@ function App() {
     <CartProvider>
       <Router>
         <nav style={{ padding: '1rem' }}>
-          <Link to="/" style={{ marginRight: '1rem' }}>Ürünler</Link>
-          <Link to="/cart">Sepet</Link>
+          <Link to="/" style={{ marginRight: '1rem' }}>Products</Link>
+          <Link to="/cart">Cart</Link>
         </nav>
         <Routes>
           <Route path="/" element={<ProductList />} />

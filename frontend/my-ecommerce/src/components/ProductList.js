@@ -1,4 +1,3 @@
-// src/components/ProductList.js
 import React, { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 import './ProductList.css';
@@ -23,7 +22,7 @@ const ProductList = () => {
       setProducts(response.data);
       setFilteredProducts(response.data);
     } catch (error) {
-      console.error("Ürünler alınırken hata:", error);
+      console.error("Error retrieving products:", error);
     }
   };
 
@@ -40,38 +39,38 @@ const ProductList = () => {
 
   return (
     <div className="product-list-container">
-      <h2>Ürünler</h2>
+      <h2>Products</h2>
       <div className="filters">
         <input
           type="text"
-          placeholder="Ürünlerde ara..."
+          placeholder="Search products..."
           value={filterText}
           onChange={(e) => setFilterText(e.target.value)}
         />
         <input
           type="number"
-          placeholder="Min Fiyat"
+          placeholder="Min Price"
           value={minPrice}
           onChange={(e) => setMinPrice(e.target.value)}
         />
         <input
           type="number"
-          placeholder="Max Fiyat"
+          placeholder="Max Price"
           value={maxPrice}
           onChange={(e) => setMaxPrice(e.target.value)}
         />
-        <button onClick={handleFilter}>Filtrele</button>
+        <button onClick={handleFilter}>Filter</button>
       </div>
       <div className="products-grid">
         {filteredProducts.map(product => (
           <div className="product-card" key={product.id}>
             <h3>{product.name}</h3>
-            <p>Fiyat: ${product.price}</p>
-            <p>İndirim: {product.discount}</p>
+            <p>Price: ${product.price}</p>
+            <p>Discount: {product.discount}</p>
             {product.image && (
               <img src={product.image} alt={product.name} />
             )}
-            <button onClick={() => addToCart(product)}>Sepete Ekle</button>
+            <button onClick={() => addToCart(product)}>Add to Cart</button>
           </div>
         ))}
       </div>
