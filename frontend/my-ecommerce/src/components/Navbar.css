@@ -1,0 +1,26 @@
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 2rem;
+    background-color: #f4f4ff;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.navbar .left-links a {
+    margin-right: 1rem;
+    text-decoration: none;
+    color: #3f3fbd;
+    font-weight: bold;
+    transition: color 0.2s ease;
+}
+
+.navbar .left-links a:hover {
+    color: #2d2db3;
+    text-decoration: underline;
+}
+
+.navbar .user-info {
+    font-weight: bold;
+    color: #444;
+}

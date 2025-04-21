@@ -1,51 +1,71 @@
+// src/components/ProductList.js
 import React, { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 import './ProductList.css';
 import { CartContext } from '../contexts/CartContext';
+import { Link } from 'react-router-dom';
 
 const ProductList = () => {
   const [products, setProducts] = useState([]);
-  const [filterText, setFilterText] = useState('');
+  const [categories, setCategories] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState('');
+  const { addToCart } = useContext(CartContext);
+  const [search, setSearch] = useState('');
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
-  const [filteredProducts, setFilteredProducts] = useState([]);
-
-  const { addToCart } = useContext(CartContext);
 
   useEffect(() => {
+    fetchCategories();
     fetchProducts();
   }, []);
 
-  const fetchProducts = async () => {
+  const fetchProducts = async (category = '') => {
     try {
-      const response = await axios.get('http://127.0.0.1:5000/api/products');
-      setProducts(response.data);
-      setFilteredProducts(response.data);
-    } catch (error) {
-      console.error("Error retrieving products:", error);
+      const params = new URLSearchParams();
+      if (category) params.append('category', category);
+      if (search) params.append('search', search);
+      if (minPrice) params.append('min_price', minPrice);
+      if (maxPrice) params.append('max_price', maxPrice);
+
+      const res = await axios.get(`http://localhost:5000/api/products?${params.toString()}`);
+      setProducts(res.data);
+    } catch (err) {
+      console.error('Error fetching products:', err);
     }
   };
 
-  const handleFilter = () => {
-    const filtered = products.filter(product => {
-      const matchesText = product.name.toLowerCase().includes(filterText.toLowerCase());
-      const price = parseFloat(product.price);
-      const minValid = minPrice === '' || price >= parseFloat(minPrice);
-      const maxValid = maxPrice === '' || price <= parseFloat(maxPrice);
-      return matchesText && minValid && maxValid;
-    });
-    setFilteredProducts(filtered);
+  const fetchCategories = async () => {
+    try {
+      const res = await axios.get('http://localhost:5000/api/categories');
+      setCategories(res.data);
+    } catch (err) {
+      console.error('Error fetching categories:', err);
+    }
+  };
+
+  const handleCategoryChange = (e) => {
+    const selected = e.target.value;
+    setSelectedCategory(selected);
+    fetchProducts(selected);
   };
 
   return (
     <div className="product-list-container">
       <h2>Products</h2>
+
       <div className="filters">
+        <select value={selectedCategory} onChange={handleCategoryChange}>
+          <option value="">All Categories</option>
+          {categories.map((cat) => (
+            <option key={cat.id} value={cat.id}>{cat.name}</option>
+          ))}
+        </select>
+
         <input
           type="text"
-          placeholder="Search products..."
-          value={filterText}
-          onChange={(e) => setFilterText(e.target.value)}
+          placeholder="Search (name)"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
         />
         <input
           type="number"
@@ -59,16 +79,22 @@ const ProductList = () => {
           value={maxPrice}
           onChange={(e) => setMaxPrice(e.target.value)}
         />
-        <button onClick={handleFilter}>Filter</button>
+        <button onClick={() => fetchProducts(selectedCategory)}>Filter</button>
       </div>
+
       <div className="products-grid">
-        {filteredProducts.map(product => (
-          <div className="product-card" key={product.id}>
-            <h3>{product.name}</h3>
-            <p>Price: ${product.price}</p>
-            <p>Discount: {product.discount}</p>
+        {products.map((product) => (
+          <div className="product-card" key={product.product_item_id}>
+            <Link to={`/product/${product.id}`}>
+              <h3>{product.name}</h3>
+            </Link>
+            <p>Price: ${parseFloat(product.Price).toFixed(2)}</p>
             {product.image && (
-              <img src={product.image} alt={product.name} />
+              <img
+                src={product.image}
+                alt={product.name}
+                style={{ width: '120px', height: 'auto' }}
+              />
             )}
             <button onClick={() => addToCart(product)}>Add to Cart</button>
           </div>
