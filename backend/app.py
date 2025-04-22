@@ -97,14 +97,34 @@ def save_address():
 # Kart kaydetme
 @app.route('/api/profile/card', methods=['POST'])
 def save_card():
-    data = request.json
-    cur = get_db_connection().cursor()
-    cur.execute("""
-        INSERT INTO cardinfo (UserID, CardHolderName, CardType, CardNumber, ExpirationMonth, ExpirationYear, CVV)
-        VALUES (%s, %s, %s, %s, %s, %s, %s)
-    """, (data['user_id'], data['cardHolderName'], data['cardType'], data['cardNumber'], data['expirationMonth'], data['expirationYear'], data['cvv']))
-    get_db_connection().commit()
-    return jsonify({"message": "Kart kaydedildi"}), 201
+    card = request.json
+    cursor = get_db_connection().cursor()
+    # Kart güncelle/ekle
+    cursor.execute("SELECT * FROM cardinfo WHERE UserID = %s",)
+    if cursor.fetchone():
+        cursor.execute("""
+            UPDATE cardinfo SET CardHolderName=%s, CardNumber=%s, ExpirationMonth=%s, ExpirationYear=%s, CVV=%s
+            WHERE UserID=%s
+        """, (
+            card['cardHolderName'], 
+            card['cardNumber'], 
+            card['expirationMonth'], 
+            card['expirationYear'], 
+            card.get('CVV', 0),  # <--- burada CVV'yi garanti altına al
+        ))
+    else:
+        cursor.execute("""
+            INSERT INTO cardinfo (UserID, CardHolderName, CardNumber, ExpirationMonth, ExpirationYear, CVV)
+            VALUES (%s, %s, %s, %s, %s, %s)
+        """, (
+            card['cardHolderName'], 
+            card['cardNumber'], 
+            card['expirationMonth'], 
+            card['expirationYear'], 
+            card.get('CVV', 0)  # <--- burada da CVV'yi 0 olarak ekle
+        ))
+
+        return jsonify({"message": "Kart kaydedildi"}), 201
 
 @app.route('/api/userdata/<int:user_id>', methods=['GET'])
 def get_user_data(user_id):
@@ -140,7 +160,7 @@ def update_profile():
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    # Adres güncelle/ekle
+    # Adres kontrol
     cursor.execute("SELECT * FROM address WHERE UserID = %s", (user_id,))
     if cursor.fetchone():
         cursor.execute("""
@@ -153,18 +173,26 @@ def update_profile():
             VALUES (%s, %s, %s, %s)
         """, (user_id, address['addressLine'], address['city'], address['postalCode']))
 
-    # Kart güncelle/ekle
+    # Kart kontrol
     cursor.execute("SELECT * FROM cardinfo WHERE UserID = %s", (user_id,))
     if cursor.fetchone():
         cursor.execute("""
-            UPDATE cardinfo SET CardHolderName=%s, CardNumber=%s, ExpirationMonth=%s, ExpirationYear=%s
+            UPDATE cardinfo SET CardHolderName=%s, CardType=%s, CardNumber=%s,
+            ExpirationMonth=%s, ExpirationYear=%s, CVV=%s
             WHERE UserID=%s
-        """, (card['cardHolderName'], card['cardNumber'], card['expirationMonth'], card['expirationYear'], user_id))
+        """, (
+            card['cardHolderName'], card['cardType'], card['cardNumber'],
+            card['expirationMonth'], card['expirationYear'], card.get('cvv', 0), user_id
+        ))
     else:
         cursor.execute("""
-            INSERT INTO cardinfo (UserID, CardHolderName, CardNumber, ExpirationMonth, ExpirationYear)
-            VALUES (%s, %s, %s, %s, %s)
-        """, (user_id, card['cardHolderName'], card['cardNumber'], card['expirationMonth'], card['expirationYear']))
+            INSERT INTO cardinfo (UserID, CardHolderName, CardType, CardNumber, 
+            ExpirationMonth, ExpirationYear, CVV)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
+        """, (
+            user_id, card['cardHolderName'], card['cardType'], card['cardNumber'],
+            card['expirationMonth'], card['expirationYear'], card.get('cvv', 0)
+        ))
 
     conn.commit()
     cursor.close()
