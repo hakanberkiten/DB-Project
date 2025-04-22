@@ -1,59 +1,109 @@
+/* Sayfa genel stil */
 .product-list-container {
-    padding: 2rem;
-    font-family: 'Segoe UI', sans-serif;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
 }
 
+h2 {
+    font-size: 28px;
+    margin-bottom: 20px;
+    color: #333;
+}
+
+/* Filtre kutuları */
 .filters {
     display: flex;
     flex-wrap: wrap;
-    gap: 10px;
-    margin-bottom: 20px;
+    gap: 12px;
+    margin-bottom: 30px;
 }
 
-
-.products-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 1.5rem;
-}
-
-.product-card {
+.filters select,
+.filters input {
+    padding: 8px 12px;
     border: 1px solid #ccc;
     border-radius: 8px;
-    padding: 1rem;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    font-size: 14px;
+    width: 180px;
+    transition: all 0.2s ease;
+}
+
+.filters select:focus,
+.filters input:focus {
+    border-color: #7e5bef;
+    outline: none;
+    box-shadow: 0 0 5px rgba(126, 91, 239, 0.4);
+}
+
+.filters button {
+    padding: 8px 16px;
+    background-color: #7e5bef;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+
+.filters button:hover {
+    background-color: #5b4dce;
+}
+
+/* Ürün ızgarası */
+.products-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 20px;
+}
+
+/* Ürün kartı */
+.product-card {
+    background-color: white;
+    border: 1px solid #eee;
+    border-radius: 12px;
+    padding: 16px;
     text-align: center;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
     transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .product-card:hover {
     transform: translateY(-4px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
 }
 
 .product-card h3 {
-    margin: 0.5rem 0;
-    color: #3f3fbd;
-    font-size: 1.1rem;
-    text-decoration: none;
+    font-size: 18px;
+    color: #5b4dce;
+    margin-bottom: 8px;
+}
+
+.product-card p {
+    margin: 4px 0;
+    color: #444;
 }
 
 .product-card img {
-    width: 100%;
-    max-height: 150px;
+    max-width: 100%;
+    height: 180px;
     object-fit: contain;
-    margin-bottom: 0.5rem;
+    border-radius: 8px;
+    margin: 12px 0;
 }
 
 .product-card button {
-    background-color: #6a5acd;
+    background-color: #7e5bef;
     color: white;
     border: none;
-    padding: 0.4rem 0.8rem;
-    border-radius: 4px;
+    padding: 10px 16px;
+    font-weight: bold;
+    border-radius: 8px;
     cursor: pointer;
+    transition: background 0.3s ease;
 }
 
 .product-card button:hover {
-    background-color: #5941c1;
+    background-color: #5b4dce;
 }

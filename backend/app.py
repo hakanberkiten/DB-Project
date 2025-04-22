@@ -25,7 +25,7 @@ def get_db_connection():
         if connection.is_connected():
             return connection
     except Error as e:
-        print("MySQL bağlantı hatası:", e)
+        print("MySQL connection error:", e)
     return None
 
 # --- ROUTES ---
@@ -42,7 +42,7 @@ def get_products():
 
     connection = get_db_connection()
     if connection is None:
-        return jsonify({"error": "Veritabanına bağlanılamadı"}), 500
+        return jsonify({"error": "Database connection failed"}), 500
 
     cursor = connection.cursor(dictionary=True)
 
@@ -92,7 +92,7 @@ def save_address():
         VALUES (%s, %s, %s, %s, %s, %s, %s)
     """, (data['user_id'], data['addressLine'], data['city'], data['state'], data['postalCode'], data['country'], data['addressType']))
     get_db_connection().commit()
-    return jsonify({"message": "Adres kaydedildi"}), 201
+    return jsonify({"message": "Address saved successfully"}), 201
 
 # Kart kaydetme
 @app.route('/api/profile/card', methods=['POST'])
@@ -124,13 +124,13 @@ def save_card():
             card.get('CVV', 0)  # <--- burada da CVV'yi 0 olarak ekle
         ))
 
-        return jsonify({"message": "Kart kaydedildi"}), 201
+        return jsonify({"message": "Card saved successfully"}), 201
 
 @app.route('/api/userdata/<int:user_id>', methods=['GET'])
 def get_user_data(user_id):
     connection = get_db_connection()
     if connection is None:
-        return jsonify({"error": "Veritabanına bağlanılamadı"}), 500
+        return jsonify({"error": "Database connection failed"}), 500
 
     cursor = connection.cursor(dictionary=True)
 
@@ -197,7 +197,7 @@ def update_profile():
     conn.commit()
     cursor.close()
     conn.close()
-    return jsonify({"message": "Profil bilgileri güncellendi"})
+    return jsonify({"message": "Profile information updated successfully"})
 
 @app.route('/api/profile/<int:user_id>', methods=['POST'])
 def save_profile(user_id):
@@ -207,11 +207,11 @@ def save_profile(user_id):
     card = data.get("card")
 
     if not address or not card:
-        return jsonify({"error": "Eksik bilgi gönderildi."}), 400
+        return jsonify({"error": "Missing information provided."}), 400
 
     conn = get_db_connection()
     if conn is None:
-        return jsonify({"error": "Veritabanına bağlanılamadı."}), 500
+        return jsonify({"error": "Database connection failed."}), 500
 
     cursor = conn.cursor()
 
@@ -245,11 +245,10 @@ def save_profile(user_id):
         ))
 
         conn.commit()
-        return jsonify({"message": "Profil başarıyla kaydedildi!"}), 201
+        return jsonify({"message": "Profile saved successfully!"}), 201
 
     except mysql.connector.Error as e:
         conn.rollback()
-        print("Hata:", e)
         return jsonify({"error": str(e)}), 500
 
     finally:
@@ -263,11 +262,11 @@ def login():
     password = data.get('password')
 
     if not username or not password:
-        return jsonify({"error": "Kullanıcı adı ve şifre gerekli"}), 400
+        return jsonify({"error": "Username and password are required"}), 400
 
     connection = get_db_connection()
     if connection is None:
-        return jsonify({"error": "Veritabanı bağlantısı sağlanamadı"}), 500
+        return jsonify({"error": "Database connection could not be established"}), 500
 
     cursor = connection.cursor(dictionary=True)
     cursor.execute("SELECT * FROM user WHERE Username = %s", (username,))
@@ -276,10 +275,10 @@ def login():
     connection.close()
 
     if not user or not check_password_hash(user['Password'], password):
-        return jsonify({"error": "Geçersiz kullanıcı adı veya şifre"}), 401
+        return jsonify({"error": "Invalid username or password"}), 401
 
     return jsonify({
-        "message": "Giriş başarılı",
+        "message": "Login succesfull",
         "user_id": user['UserID'],
         "username": user['Username'],
         "role": user['UserRole']
@@ -308,7 +307,7 @@ def get_profile(user_id):
 def get_product_detail(product_id):
     connection = get_db_connection()
     if connection is None:
-        return jsonify({"error": "Veritabanına bağlanılamadı"}), 500
+        return jsonify({"error": "Database connection could not be established"}), 500
 
     cursor = connection.cursor(dictionary=True)
     cursor.execute("""
@@ -327,7 +326,7 @@ def get_product_detail(product_id):
     connection.close()
 
     if not product:
-        return jsonify({"error": "Ürün bulunamadı"}), 404
+        return jsonify({"error": "Product not found"}), 404
 
     return jsonify(product)
 
@@ -342,11 +341,11 @@ def create_order():
     cart_items     = data.get('cart_items', [])
 
     if not all([user_id, address_id, payment_method, total_amount, cart_items]):
-        return jsonify({"error": "Eksik sipariş verisi"}), 400
+        return jsonify({"error": "Missing order data"}), 400
 
     conn = get_db_connection()
     if conn is None:
-        return jsonify({"error": "Veritabanına bağlanılamadı"}), 500
+        return jsonify({"error": "Database connection could not be established"}), 500
 
     cur = conn.cursor()
 
@@ -378,11 +377,11 @@ def create_order():
             ))
 
         conn.commit()
-        return jsonify({"message": "Sipariş tamamlandı", "order_id": order_id}), 201
+        return jsonify({"message": "Order completed", "order_id": order_id}), 201
 
     except Error as e:
         conn.rollback()
-        print("Sipariş hatası:", e)
+        print("Order error:", e)
         return jsonify({"error": str(e)}), 500
 
     finally:
@@ -399,18 +398,18 @@ def signup():
     phone = data.get('phone')
 
     if not all([username, email, password]):
-        return jsonify({'error': 'Eksik alanlar var'}), 400
+        return jsonify({'error': 'Missing fields'}), 400
 
     connection = get_db_connection()
     if connection is None:
-        return jsonify({'error': 'Veritabanına bağlanılamadı'}), 500
+        return jsonify({'error': 'Database connection could not be established'}), 500
 
     cursor = connection.cursor()
 
     # Check if user exists
     cursor.execute("SELECT * FROM user WHERE Username = %s OR Email = %s", (username, email))
     if cursor.fetchone():
-        return jsonify({'error': 'Bu kullanıcı adı veya email zaten mevcut'}), 409
+        return jsonify({'error': 'This username or email already exists'}), 409
 
     hashed_password = generate_password_hash(password)
 
@@ -423,13 +422,13 @@ def signup():
     cursor.close()
     connection.close()
 
-    return jsonify({'message': 'Kayıt başarılı!'}), 201
+    return jsonify({'message': 'Registration successful!'}), 201
 # ✅ GET Cart by User ID
 @app.route('/api/cart/<int:user_id>', methods=['GET'])
 def get_cart(user_id):
     connection = get_db_connection()
     if connection is None:
-        return jsonify({"error": "Veritabanına bağlanılamadı"}), 500
+        return jsonify({"error": "Database connection could not be established"}), 500
 
     cursor = connection.cursor(dictionary=True)
     query = """
@@ -457,11 +456,11 @@ def add_to_cart():
     quantity = data.get('quantity', 1)
 
     if not user_id or not product_item_id:
-        return jsonify({"error": "Eksik veri gönderildi"}), 400
+        return jsonify({"error": "Missing data"}), 400
 
     connection = get_db_connection()
     if connection is None:
-        return jsonify({"error": "Veritabanına bağlanılamadı"}), 500
+        return jsonify({"error": "Database connection could not be established"}), 500
 
     cursor = connection.cursor()
 
@@ -485,7 +484,7 @@ def add_to_cart():
     cursor.close()
     connection.close()
 
-    return jsonify({"message": "Ürün sepete eklendi"}), 201
+    return jsonify({"message": "Product added to cart"}), 201
 
 
 # ✅ Get All Categories
@@ -493,7 +492,7 @@ def add_to_cart():
 def get_categories():
     connection = get_db_connection()
     if connection is None:
-        return jsonify({"error": "Veritabanına bağlanılamadı"}), 500
+        return jsonify({"error": "Database connection could not be established"}), 500
 
     cursor = connection.cursor(dictionary=True)
     cursor.execute("SELECT CategoryID AS id, CategoryName AS name FROM category")

@@ -1,20 +1,36 @@
-// src/components/Cart.js
 import React, { useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { CartContext } from '../contexts/CartContext';
+import './Cart.css';
 
 const Cart = () => {
   const { cartItems, setCartItems } = useContext(CartContext);
   const navigate = useNavigate();
 
-  // 🧮 Sepet toplamı hesapla
+  // Calculate total amount
   const totalAmount = cartItems.reduce(
     (sum, item) => sum + parseFloat(item.Price ?? 0) * (item.quantity ?? 1),
     0
   );
 
-  // ✅ Siparişi tamamla
+  // Update quantity of an item
+  const updateQuantity = (index, newQuantity) => {
+    if (newQuantity < 1) return;
+
+    const newCartItems = [...cartItems];
+    newCartItems[index].quantity = newQuantity;
+    setCartItems(newCartItems);
+  };
+
+  // Remove item from cart
+  const removeItem = (index) => {
+    const newCartItems = [...cartItems];
+    newCartItems.splice(index, 1);
+    setCartItems(newCartItems);
+  };
+
+  // Checkout process
   const handleCheckout = async () => {
     const user = JSON.parse(localStorage.getItem('user'));
     if (!user) {
@@ -55,26 +71,69 @@ const Cart = () => {
     }
   };
 
-
   return (
-    <div style={{ padding: '20px' }}>
-      <h2>Your Cart</h2>
+    <div className="cart-container">
+      <h2 className="cart-title">Your Cart</h2>
+
       {cartItems.length === 0 ? (
-        <p>Your cart is empty.</p>
+        <p className="empty-cart-message">Your cart is empty.</p>
       ) : (
         <>
-          {cartItems.map((item, index) => (
-            <div
-              key={index}
-              style={{ borderBottom: '1px solid #ccc', padding: '10px 0' }}
-            >
-              <h4>{item.name}</h4>
-              <p>Price: ${parseFloat(item.Price ?? 0).toFixed(2)}</p>
-              <p>Quantity: {item.quantity ?? 1}</p>
+          <div className="cart-items">
+            {cartItems.map((item, index) => (
+              <div key={index} className="cart-item">
+                <img
+                  src={item.image || 'https://via.placeholder.com/100'}
+                  alt={item.name}
+                  className="cart-item-image"
+                />
+
+
+                <div className="cart-item-details">
+                  <h4 className="cart-item-name">{item.name}</h4>
+                  <p className="cart-item-price">${parseFloat(item.Price ?? 0).toFixed(2)}</p>
+
+                  <div className="cart-item-actions">
+                    <div className="quantity-control">
+                      <button
+                        className="quantity-btn"
+                        onClick={() => updateQuantity(index, (item.quantity ?? 1) - 1)}
+                      >
+                        -
+                      </button>
+                      <span className="quantity-input">{item.quantity ?? 1}</span>
+                      <button
+                        className="quantity-btn"
+                        onClick={() => updateQuantity(index, (item.quantity ?? 1) + 1)}
+                      >
+                        +
+                      </button>
+                    </div>
+                    <button
+                      className="remove-btn"
+                      onClick={() => removeItem(index)}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="cart-summary">
+            <div className="subtotal">
+              <span>Subtotal:</span>
+              <span>${totalAmount.toFixed(2)}</span>
             </div>
-          ))}
-          <h3>Total: ${totalAmount.toFixed(2)}</h3>
-          <button onClick={handleCheckout}>Complete Purchase</button>
+            <div className="total">
+              <span>Total:</span>
+              <span>${totalAmount.toFixed(2)}</span>
+            </div>
+            <button className="checkout-btn" onClick={handleCheckout}>
+              Complete Purchase
+            </button>
+          </div>
         </>
       )}
     </div>

@@ -28,6 +28,8 @@ const ProductList = () => {
       if (maxPrice) params.append('max_price', maxPrice);
 
       const res = await axios.get(`http://localhost:5000/api/products?${params.toString()}`);
+      console.log("Fetched products:", res.data);
+
       setProducts(res.data);
     } catch (err) {
       console.error('Error fetching products:', err);
@@ -96,7 +98,12 @@ const ProductList = () => {
                 style={{ width: '120px', height: 'auto' }}
               />
             )}
-            <button onClick={() => addToCart(product)}>Add to Cart</button>
+            <button onClick={() => addToCart({
+              ...product,
+              image: product.image || product.ProductImage  // garanti
+            })}>
+              Add to Cart
+            </button>
           </div>
         ))}
       </div>

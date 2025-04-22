@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import './Login.css';
 
 const Login = () => {
     const [formData, setFormData] = useState({ username: '', password: '' });
@@ -20,26 +21,37 @@ const Login = () => {
             localStorage.setItem('user', JSON.stringify(user));
             setMessage("Login successful, redirecting...");
 
-            // Mağazaya yönlendir
             setTimeout(() => {
                 navigate('/');
             }, 1000);
 
         } catch (err) {
-            const errMsg = err.response?.data?.error || 'Login error';
+            const errMsg = err.response?.data?.error || 'Login failed. Please try again.';
             setMessage(errMsg);
         }
     };
 
     return (
-        <div style={{ padding: '2rem' }}>
-            <h2>Giriş Yap</h2>
-            <form onSubmit={handleSubmit}>
-                <input type="text" name="username" placeholder="Username" onChange={handleChange} required /><br />
-                <input type="password" name="password" placeholder="Password" onChange={handleChange} required /><br />
+        <div className="login-container">
+            <h2>Login</h2>
+            <form className="login-form" onSubmit={handleSubmit}>
+                <input
+                    type="text"
+                    name="username"
+                    placeholder="Username"
+                    onChange={handleChange}
+                    required
+                />
+                <input
+                    type="password"
+                    name="password"
+                    placeholder="Password"
+                    onChange={handleChange}
+                    required
+                />
                 <button type="submit">Login</button>
             </form>
-            {message && <p>{message}</p>}
+            {message && <p className="login-message">{message}</p>}
         </div>
     );
 };
