@@ -13,6 +13,13 @@ const ProductDetail = () => {
     }, [id]);
 
     if (!product) return <p>Loading...</p>;
+    const genderMap = {
+        0: "Unisex",
+        1: "Male",
+        2: "Female"
+    };
+
+    // JSX içinde
 
     return (
         <div style={{ padding: '2rem' }}>
@@ -20,8 +27,15 @@ const ProductDetail = () => {
             <img src={product.image} alt={product.name} width="200" /><br />
             <p><strong>Description:</strong> {product.description}</p>
             <p><strong>Price:</strong> ${parseFloat(product.price).toFixed(2)}</p>
-            <p><strong>Discount:</strong> %{product.discount}</p>
-            <p><strong>Gender:</strong> {product.gender === 0 ? 'Unisex' : product.gender === 1 ? 'Male' : 'Female'}</p>
+            <p>
+                <strong>Gender:</strong>{" "}
+                {{
+                    0: "Unisex",
+                    1: "Male",
+                    2: "Female"
+                }[parseInt(product.Gender)] || "Unknown"}
+            </p>
+
         </div>
     );
 };
