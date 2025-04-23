@@ -7,7 +7,8 @@ const Signup = () => {
         username: '',
         email: '',
         phone: '',
-        password: ''
+        password: '',
+        role: 'Customer'  // default role
     });
 
     const [message, setMessage] = useState('');
@@ -30,11 +31,17 @@ const Signup = () => {
     return (
         <div className="signup-container">
             <h2>Sign Up</h2>
-            <form className="signup-form" onSubmit={handleSubmit}>
+            <form onSubmit={handleSubmit} className="signup-form">
                 <input type="text" name="username" placeholder="Username" onChange={handleChange} required />
                 <input type="email" name="email" placeholder="Email" onChange={handleChange} required />
                 <input type="tel" name="phone" placeholder="Phone" onChange={handleChange} />
                 <input type="password" name="password" placeholder="Password" onChange={handleChange} required />
+
+                <select name="role" onChange={handleChange}>
+                    <option value="Customer">Customer</option>
+                    <option value="Admin">Admin</option>
+                </select>
+
                 <button type="submit">Sign Up</button>
             </form>
             {message && <p className="signup-message">{message}</p>}

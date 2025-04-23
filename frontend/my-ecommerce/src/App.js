@@ -8,9 +8,9 @@ import Cart from './components/Cart';
 import Login from './components/Login';
 import Signup from './components/Signup';
 import Profile from './components/Profile';
-
+import AdminPage from './components/AdminPage';
 import { CartProvider } from './contexts/CartContext';
-
+import AdminPanel from './components/AdminPanel'; // Assuming you have an AdminPanel component
 function App() {
   return (
     <CartProvider>
@@ -19,6 +19,7 @@ function App() {
         <Routes>
           <Route path="/" element={<ProductList />} />
           <Route path="/products" element={<ProductList />} />
+          <Route path="/admin" element={<AdminPanel />} />
 
           <Route path="/product/:id" element={<ProductDetail />} />
           <Route path="/cart" element={<Cart />} />

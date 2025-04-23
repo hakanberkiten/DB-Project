@@ -330,17 +330,151 @@ def get_product_detail(product_id):
 
     return jsonify(product)
 
+@app.route('/api/admin/users-by-product/<int:product_id>', methods=['GET'])
+def get_users_by_product(product_id):
+    connection = get_db_connection()
+    cursor = connection.cursor(dictionary=True)
 
+    query = """
+        SELECT DISTINCT u.Username, u.Email, o.OrderID, u.UserID
+        FROM `order` o
+        JOIN orderitem oi ON o.OrderID = oi.OrderID
+        JOIN productitem pi ON oi.ProductItemID = pi.ProductItemID
+        JOIN product p ON pi.ProductID = p.ProductID
+        JOIN user u ON o.UserID = u.UserID
+        WHERE p.ProductID = %s
+    """
+
+    cursor.execute(query, (product_id,))
+    result = cursor.fetchall()
+
+    cursor.close()
+    connection.close()
+    return jsonify(result)
+@app.route('/api/admin/category-price-stats/<int:category_id>', methods=['GET'])
+def get_category_price_stats(category_id):
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("""
+        SELECT 
+            MAX(Price) as max_price,
+            MIN(Price) as min_price,
+            AVG(Price) as avg_price
+        FROM product
+        WHERE CategoryID = %s
+    """, (category_id,))
+    stats = cursor.fetchone()
+    cursor.close()
+    conn.close()
+    return jsonify(stats)
+
+
+@app.route('/api/admin/order-product', methods=['POST'])
+def admin_order_product():
+    data = request.json
+    product_item_id = data.get('product_item_id')
+    quantity = data.get('quantity')
+
+    if not product_item_id or not quantity:
+        return jsonify({"error": "Eksik bilgi gönderildi"}), 400
+
+    connection = get_db_connection()
+    if connection is None:
+        return jsonify({"error": "Veritabanına bağlanılamadı"}), 500
+
+    cursor = connection.cursor(dictionary=True)
+
+    try:
+        # Önce mevcut stok kontrolü yapılır
+        cursor.execute("SELECT Stock FROM productitem WHERE ProductItemID = %s", (product_item_id,))
+        result = cursor.fetchone()
+        if not result:
+            return jsonify({"error": "Ürün bulunamadı"}), 404
+
+        current_stock = result['Stock']
+        new_stock = current_stock - quantity
+
+        if new_stock < 0:
+            return jsonify({"error": "Yeterli stok yok"}), 400
+
+        # Stok güncellenir
+        cursor.execute("UPDATE productitem SET Stock = %s WHERE ProductItemID = %s", (new_stock, product_item_id))
+
+        connection.commit()
+        return jsonify({"message": "Sipariş verildi, stok güncellendi", "new_stock": new_stock}), 200
+
+    except Exception as e:
+        connection.rollback()
+        return jsonify({"error": str(e)}), 500
+
+    finally:
+        cursor.close()
+        connection.close()
+@app.route('/api/admin/update-stock', methods=['POST'])
+def update_stock():
+    data = request.json
+    product_item_id = data.get('product_item_id')
+    quantity = data.get('quantity')
+
+    if not product_item_id or quantity is None:
+        return jsonify({'error': 'Eksik bilgi'}), 400
+
+    connection = get_db_connection()
+    cursor = connection.cursor()
+
+    try:
+        cursor.execute("""
+            UPDATE productitem SET QuantityInStock = %s WHERE ProductItemID = %s
+        """, (quantity, product_item_id))
+        connection.commit()
+        return jsonify({'message': 'Stock updated successfully!'})
+    except mysql.connector.Error as e:
+        print("MySQL Error:", e)
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cursor.close()
+        connection.close()
+
+@app.route('/api/admin/add-card', methods=['POST'])
+def admin_add_card():
+    data = request.json
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        INSERT INTO cardinfo (UserID, CardHolderName, CardType, CardNumber, ExpirationMonth, ExpirationYear, CVV)
+        VALUES (%s, %s, %s, %s, %s, %s, %s)
+    """, (
+        data['user_id'], data['cardHolderName'], data['cardType'], data['cardNumber'],
+        data['expirationMonth'], data['expirationYear'], data['cvv']
+    ))
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return jsonify({"message": "Card added to user"})
+
+@app.route('/api/admin/delete-product/<int:product_id>', methods=['DELETE'])
+def delete_product(product_id):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    cursor.execute("DELETE FROM cartitem WHERE ProductItemID IN (SELECT ProductItemID FROM productitem WHERE ProductID = %s)", (product_id,))
+    cursor.execute("DELETE FROM productitem WHERE ProductID = %s", (product_id,))
+    cursor.execute("DELETE FROM product WHERE ProductID = %s", (product_id,))
+    
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return jsonify({"message": "Product deleted from system and carts"})
 @app.route('/api/orders', methods=['POST'])
 def create_order():
     data = request.json
-    user_id        = data.get('user_id')
-    address_id     = data.get('address_id')
+    user_id = data.get('user_id')
+    address_id = data.get('address_id')
     payment_method = data.get('payment_method')
-    total_amount   = data.get('total_amount')
-    cart_items     = data.get('cart_items', [])
+    total_amount = data.get('total_amount')
+    cart_items = data.get('cart_items', [])
 
-    if not all([user_id, address_id, payment_method, total_amount, cart_items]):
+    if not all([user_id, address_id, payment_method, total_amount]) or not cart_items:
         return jsonify({"error": "Missing order data"}), 400
 
     conn = get_db_connection()
@@ -350,7 +484,7 @@ def create_order():
     cur = conn.cursor()
 
     try:
-        # 1) order tablosuna ekle
+        # Sipariş oluştur
         cur.execute("""
             INSERT INTO `order` (UserID, OrderDate, AddressID, PaymentMethod, Status, TotalAmount)
             VALUES (%s, %s, %s, %s, %s, %s)
@@ -362,32 +496,46 @@ def create_order():
             "Pending",
             total_amount
         ))
-
         order_id = cur.lastrowid
 
-        # 2) orderitem tablosuna ekle
+        # Sipariş ürünlerini işle
         for item in cart_items:
+            product_item_id = item['product_item_id']
+            quantity = item.get('quantity', 1)
+
+            # Mevcut stok kontrolü
+            cur.execute("SELECT QuantityInStock FROM productitem WHERE ProductItemID = %s", (product_item_id,))
+            result = cur.fetchone()
+            if not result:
+                raise ValueError(f"Product item ID {product_item_id} not found.")
+            
+            stock = result[0]
+            if stock < quantity:
+                raise ValueError(f"Product with ID {product_item_id} is out of stock.")
+
+            # Stok düşür
+            cur.execute("""
+                UPDATE productitem
+                SET QuantityInStock = QuantityInStock - %s
+                WHERE ProductItemID = %s
+            """, (quantity, product_item_id))
+
+            # Sipariş kalemi oluştur
             cur.execute("""
                 INSERT INTO orderitem (OrderID, ProductItemID, Quantity)
                 VALUES (%s, %s, %s)
-            """, (
-                order_id,
-                item['product_item_id'],   # dikkat: frontend bu key ile göndermeli
-                item['quantity']
-            ))
+            """, (order_id, product_item_id, quantity))
 
         conn.commit()
         return jsonify({"message": "Order completed", "order_id": order_id}), 201
 
-    except Error as e:
+    except Exception as e:
         conn.rollback()
-        print("Order error:", e)
         return jsonify({"error": str(e)}), 500
 
     finally:
         cur.close()
         conn.close()
-
 
 @app.route('/api/signup', methods=['POST'])
 def signup():
@@ -396,33 +544,33 @@ def signup():
     email = data.get('email')
     password = data.get('password')
     phone = data.get('phone')
+    role = data.get('role', 'Customer')  # <-- varsayılan olarak Customer
 
     if not all([username, email, password]):
-        return jsonify({'error': 'Missing fields'}), 400
+        return jsonify({'error': 'Eksik alanlar var'}), 400
 
     connection = get_db_connection()
     if connection is None:
-        return jsonify({'error': 'Database connection could not be established'}), 500
+        return jsonify({'error': 'Veritabanına bağlanılamadı'}), 500
 
     cursor = connection.cursor()
 
-    # Check if user exists
     cursor.execute("SELECT * FROM user WHERE Username = %s OR Email = %s", (username, email))
     if cursor.fetchone():
-        return jsonify({'error': 'This username or email already exists'}), 409
+        return jsonify({'error': 'Bu kullanıcı adı veya email zaten mevcut'}), 409
 
     hashed_password = generate_password_hash(password)
 
     cursor.execute("""
         INSERT INTO user (Username, Email, Password, PhoneNumber, UserRole, CreatedAt)
         VALUES (%s, %s, %s, %s, %s, %s)
-    """, (username, email, hashed_password, phone, "Customer", datetime.now()))
+    """, (username, email, hashed_password, phone, role, datetime.now()))
 
     connection.commit()
     cursor.close()
     connection.close()
 
-    return jsonify({'message': 'Registration successful!'}), 201
+    return jsonify({'message': 'Kayıt başarılı!'}), 201
 # ✅ GET Cart by User ID
 @app.route('/api/cart/<int:user_id>', methods=['GET'])
 def get_cart(user_id):

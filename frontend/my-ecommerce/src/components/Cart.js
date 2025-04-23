@@ -67,8 +67,16 @@ const Cart = () => {
       navigate('/');
     } catch (err) {
       console.error("Order error:", err);
-      alert("An error occurred while creating the order.");
+
+      const backendMessage = err.response?.data?.error;
+
+      if (backendMessage && backendMessage.includes("out of stock")) {
+        alert("Sorry, one of the products in your cart is out of stock.");
+      } else {
+        alert("An error occurred while creating the order.");
+      }
     }
+
   };
 
   return (
