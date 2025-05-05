@@ -89,7 +89,7 @@ const AdminPanel = () => {
                 {userResults.length > 0 && (
                     <ul className="response-list">
                         {userResults.map((u, i) => (
-                            <li key={i}><strong>{u.Username}</strong> ({u.Email}) - Order ID: {u.OrderID}</li>
+                            <li key={i}><strong>{u.Username}</strong> ({u.Email})</li>
                         ))}
                     </ul>
                 )}

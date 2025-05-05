@@ -334,9 +334,9 @@ def get_product_detail(product_id):
 def get_users_by_product(product_id):
     connection = get_db_connection()
     cursor = connection.cursor(dictionary=True)
-
+    
     query = """
-        SELECT DISTINCT u.Username, u.Email, o.OrderID, u.UserID
+        SELECT DISTINCT u.Username, u.Email
         FROM `order` o
         JOIN orderitem oi ON o.OrderID = oi.OrderID
         JOIN productitem pi ON oi.ProductItemID = pi.ProductItemID
@@ -361,7 +361,8 @@ def get_category_price_stats(category_id):
             MIN(Price) as min_price,
             AVG(Price) as avg_price
         FROM product
-        WHERE CategoryID = %s
+        GROUP BY CategoryID
+        HAVING CategoryID = %s
     """, (category_id,))
     stats = cursor.fetchone()
     cursor.close()
